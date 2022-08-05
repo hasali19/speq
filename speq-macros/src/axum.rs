@@ -108,7 +108,7 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
                         .expect("number of path parameters must match path string");
                     quote! {
                         params.push(speq::ParamSpec {
-                            name: #name.to_owned(),
+                            name: #name.into(),
                             type_desc: <#model as speq::reflection::Reflect>::reflect(cx),
                         });
                     }
@@ -136,7 +136,7 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
             let description = match args.description {
                 None => quote! { None },
                 Some(description) => {
-                    quote! { Some(#description.to_owned()) }
+                    quote! { Some(#description.into()) }
                 }
             };
 

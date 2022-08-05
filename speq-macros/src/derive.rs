@@ -42,8 +42,8 @@ pub fn derive_reflect(input: TokenStream) -> TokenStream {
                 };
                 quote! {
                     EnumVariant {
-                        name: #name.to_owned(),
-                        tag_value: #serialize_name.to_owned(),
+                        name: #name.into(),
+                        tag_value: #serialize_name.into(),
                         kind: #kind,
                     }
                 }
@@ -51,8 +51,8 @@ pub fn derive_reflect(input: TokenStream) -> TokenStream {
 
             quote! {
                 TypeDecl::Enum(EnumType {
-                    name: stringify!(#ident).to_string(),
-                    tag: Some(EnumTag::Internal(#tag.to_owned())),
+                    name: stringify!(#ident).into(),
+                    tag: Some(EnumTag::Internal(#tag.into())),
                     variants: vec![#(#variants),*],
                 })
             }
@@ -62,7 +62,7 @@ pub fn derive_reflect(input: TokenStream) -> TokenStream {
                 let fields = fields.into_iter().map(build_field);
                 quote! {
                     TypeDecl::Struct(StructType {
-                        name: stringify!(#ident).to_string(),
+                        name: stringify!(#ident).into(),
                         fields: vec![#(#fields),*],
                     })
                 }
@@ -98,7 +98,7 @@ fn build_field(field: serde_derive_internals::ast::Field) -> proc_macro2::TokenS
     let required = field.attrs.default().is_none();
     quote! {
         Field {
-            name: #name.to_owned(),
+            name: #name.into(),
             flatten: #flatten,
             required: #required,
             type_desc: <#ty as Reflect>::reflect(cx),

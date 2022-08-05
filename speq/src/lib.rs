@@ -11,12 +11,14 @@ pub use speq_macros::Reflect;
 
 use reflection::{Type, TypeContext, TypeDecl};
 
+pub type SpeqStr = Cow<'static, str>;
+
 #[cfg(all(feature = "axum_query", not(feature = "axum")))]
 compile_error!("feature 'axum_query' requires also enabling 'axum'");
 
 #[derive(Clone, Debug)]
 pub struct ParamSpec {
-    pub name: String,
+    pub name: SpeqStr,
     pub type_desc: Type,
 }
 
@@ -33,17 +35,17 @@ pub struct RequestSpec {
 #[derive(Clone, Debug)]
 pub struct ResponseSpec {
     pub status: StatusCode,
-    pub description: Option<String>,
+    pub description: Option<SpeqStr>,
     pub type_desc: Option<Type>,
 }
 
 #[derive(Clone, Debug)]
 pub struct RouteSpec {
-    pub name: Cow<'static, str>,
-    pub path: Cow<'static, str>,
+    pub name: SpeqStr,
+    pub path: SpeqStr,
     pub method: Method,
-    pub src_file: Cow<'static, str>,
-    pub doc: Option<Cow<'static, str>>,
+    pub src_file: SpeqStr,
+    pub doc: Option<SpeqStr>,
     pub params: Vec<ParamSpec>,
     pub query: Option<QuerySpec>,
     pub request: Option<RequestSpec>,
@@ -53,7 +55,7 @@ pub struct RouteSpec {
 #[derive(Clone, Debug)]
 pub struct ApiSpec {
     pub routes: Vec<RouteSpec>,
-    pub types: HashMap<Cow<'static, str>, TypeDecl>,
+    pub types: HashMap<SpeqStr, TypeDecl>,
 }
 
 #[derive(Clone, Copy)]

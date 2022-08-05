@@ -1,10 +1,11 @@
-use std::borrow::Cow;
 use std::collections::HashMap;
+
+use crate::SpeqStr;
 
 #[doc(hidden)]
 #[derive(Clone, Debug)]
 pub struct TypeContext {
-    types: HashMap<Cow<'static, str>, TypeDecl>,
+    types: HashMap<SpeqStr, TypeDecl>,
 }
 
 impl TypeContext {
@@ -14,7 +15,7 @@ impl TypeContext {
         }
     }
 
-    pub fn insert_with(&mut self, id: Cow<'static, str>, f: impl FnOnce(&mut Self) -> TypeDecl) {
+    pub fn insert_with(&mut self, id: SpeqStr, f: impl FnOnce(&mut Self) -> TypeDecl) {
         #[allow(clippy::map_entry)]
         if !self.types.contains_key(&id) {
             let decl = f(self);
@@ -22,7 +23,7 @@ impl TypeContext {
         }
     }
 
-    pub fn into_types(self) -> HashMap<Cow<'static, str>, TypeDecl> {
+    pub fn into_types(self) -> HashMap<SpeqStr, TypeDecl> {
         self.types
     }
 }
@@ -34,7 +35,7 @@ impl Default for TypeContext {
 }
 
 pub trait Reflect {
-    fn type_id() -> Option<Cow<'static, str>>;
+    fn type_id() -> Option<SpeqStr>;
     fn reflect(cx: &mut TypeContext) -> Type;
 }
 
@@ -44,7 +45,7 @@ pub enum Type {
     Option(Box<Type>),
     Array(Box<Type>),
     Map(Box<Type>),
-    Id(Cow<'static, str>),
+    Id(SpeqStr),
 }
 
 impl Type {
@@ -112,7 +113,7 @@ pub enum PrimitiveType {
 
 #[derive(Clone, Debug)]
 pub struct Field {
-    pub name: String,
+    pub name: SpeqStr,
     pub flatten: bool,
     pub required: bool,
     pub type_desc: Type,
@@ -120,19 +121,19 @@ pub struct Field {
 
 #[derive(Clone, Debug)]
 pub struct StructType {
-    pub name: String,
+    pub name: SpeqStr,
     pub fields: Vec<Field>,
 }
 
 #[derive(Clone, Debug)]
 pub enum EnumTag {
-    Internal(String),
+    Internal(SpeqStr),
 }
 
 #[derive(Clone, Debug)]
 pub struct EnumVariant {
-    pub name: String,
-    pub tag_value: String,
+    pub name: SpeqStr,
+    pub tag_value: SpeqStr,
     pub kind: EnumVariantKind,
 }
 
@@ -145,7 +146,7 @@ pub enum EnumVariantKind {
 
 #[derive(Clone, Debug)]
 pub struct EnumType {
-    pub name: String,
+    pub name: SpeqStr,
     pub tag: Option<EnumTag>,
     pub variants: Vec<EnumVariant>,
 }
@@ -156,7 +157,7 @@ mod impls {
     macro_rules! impl_for_primitive {
         ($t:ty, $e:expr) => {
             impl Reflect for $t {
-                fn type_id() -> Option<Cow<'static, str>> {
+                fn type_id() -> Option<SpeqStr> {
                     None
                 }
 
@@ -186,7 +187,7 @@ mod impls {
     impl_for_primitive!(String, PrimitiveType::String);
 
     impl<T: Reflect> Reflect for Option<T> {
-        fn type_id() -> Option<Cow<'static, str>> {
+        fn type_id() -> Option<SpeqStr> {
             None
         }
 
@@ -196,7 +197,7 @@ mod impls {
     }
 
     impl<T: Reflect> Reflect for Vec<T> {
-        fn type_id() -> Option<Cow<'static, str>> {
+        fn type_id() -> Option<SpeqStr> {
             None
         }
 
@@ -209,7 +210,7 @@ mod impls {
     macro_rules! forward_impl {
         ($type:ty) => {
             impl<T: Reflect> Reflect for $type {
-                fn type_id() -> Option<Cow<'static, str>> {
+                fn type_id() -> Option<SpeqStr> {
                     T::type_id()
                 }
 
