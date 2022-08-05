@@ -223,6 +223,6 @@ mod impls {
     #[cfg(feature = "axum_query")]
     forward_impl!(axum::extract::Query<T>);
 
-    #[cfg(feature = "serde_qs")]
+    #[cfg(feature = "serde_qs_axum")]
     forward_impl!(serde_qs::axum::QsQuery<T>);
 }
