@@ -21,6 +21,7 @@ pub fn router() -> Router {
         })
 }
 
+#[doc(hidden)]
 pub fn register_route<H, T>(router: Router, path: &str, method: Method, route: H) -> Router
 where
     H: Handler<T, Body>,

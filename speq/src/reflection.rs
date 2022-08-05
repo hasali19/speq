@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 
+#[doc(hidden)]
 #[derive(Clone, Debug)]
 pub struct TypeContext {
     types: HashMap<Cow<'static, str>, TypeDecl>,
@@ -13,10 +14,6 @@ impl TypeContext {
         }
     }
 
-    pub fn get(&mut self, id: &str) -> Option<&TypeDecl> {
-        self.types.get(id)
-    }
-
     pub fn insert_with(&mut self, id: Cow<'static, str>, f: impl FnOnce(&mut Self) -> TypeDecl) {
         #[allow(clippy::map_entry)]
         if !self.types.contains_key(&id) {
@@ -25,9 +22,6 @@ impl TypeContext {
         }
     }
 
-    /// Returns the inner map storing type descriptions.
-    ///
-    /// This is a map from type id to the corresponding description.
     pub fn into_types(self) -> HashMap<Cow<'static, str>, TypeDecl> {
         self.types
     }
