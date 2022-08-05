@@ -211,14 +211,22 @@ mod impls {
         }
     }
 
-    #[cfg(feature = "serde_qs")]
-    impl<T: Reflect> Reflect for serde_qs::axum::QsQuery<T> {
-        fn type_id() -> Option<Cow<'static, str>> {
-            T::type_id()
-        }
+    macro_rules! forward_impl {
+        ($type:ty) => {
+            impl<T: Reflect> Reflect for $type {
+                fn type_id() -> Option<Cow<'static, str>> {
+                    T::type_id()
+                }
 
-        fn reflect(cx: &mut TypeContext) -> Type {
-            T::reflect(cx)
-        }
+                fn reflect(cx: &mut TypeContext) -> Type {
+                    T::reflect(cx)
+                }
+            }
+        };
     }
+
+    forward_impl!(axum::extract::Query<T>);
+
+    #[cfg(feature = "serde_qs")]
+    forward_impl!(serde_qs::axum::QsQuery<T>);
 }
