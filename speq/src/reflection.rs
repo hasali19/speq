@@ -211,6 +211,7 @@ mod impls {
         }
     }
 
+    #[allow(unused)]
     macro_rules! forward_impl {
         ($type:ty) => {
             impl<T: Reflect> Reflect for $type {
@@ -225,6 +226,7 @@ mod impls {
         };
     }
 
+    #[cfg(feature = "axum_query")]
     forward_impl!(axum::extract::Query<T>);
 
     #[cfg(feature = "serde_qs")]

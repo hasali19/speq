@@ -5,15 +5,31 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[example]]
+name = "axum"
+required-features = ["axum", "axum_query"]
+
 [dependencies]
+http = "0.2"
 inventory = "0.3"
 speq-macros = { path = "../speq-macros" }
 
 [dependencies.axum]
 version = "0.5"
 default-features = false
-
-[dependencies.serde_qs]
-version = "0.10"
 optional = true
-features = ["axum"]
+
+[features]
+axum_query = ["axum?/query"]
+
+[dev-dependencies.axum]
+version = "0.5"
+features = ["http1"]
+
+[dev-dependencies.serde]
+version = "1.0"
+features = ["derive"]
+
+[dev-dependencies.tokio]
+version = "1.20"
+features = ["macros"]

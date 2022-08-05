@@ -1,13 +1,18 @@
+#[cfg(feature = "axum")]
+pub mod axum;
 pub mod reflection;
 
 use std::borrow::Cow;
 use std::collections::HashMap;
 
-pub use axum::http::{Method, StatusCode};
+pub use http::{Method, StatusCode};
 pub use inventory;
 pub use speq_macros::*;
 
 use reflection::{Type, TypeContext, TypeDecl};
+
+#[cfg(all(feature = "axum_query", not(feature = "axum")))]
+compile_error!("feature 'axum_query' requires also enabling 'axum'");
 
 #[derive(Clone, Debug)]
 pub struct ParamSpec {
@@ -60,17 +65,13 @@ impl RouteSpecFn {
     }
 }
 
-#[derive(Clone, Copy)]
-pub struct RouteRegistrar(pub fn(axum::Router) -> axum::Router);
-
-::inventory::collect!(RouteSpecFn);
-::inventory::collect!(RouteRegistrar);
+inventory::collect!(RouteSpecFn);
 
 pub fn spec() -> ApiSpec {
     let mut tcx = TypeContext::new();
 
     let mut routes = vec![];
-    for RouteSpecFn(f) in ::inventory::iter::<RouteSpecFn> {
+    for RouteSpecFn(f) in inventory::iter::<RouteSpecFn> {
         routes.push(f(&mut tcx));
     }
 
@@ -78,38 +79,4 @@ pub fn spec() -> ApiSpec {
         routes,
         types: tcx.into_types(),
     }
-}
-
-pub fn router() -> axum::Router {
-    ::inventory::iter::<RouteRegistrar>
-        .into_iter()
-        .fold(axum::Router::new(), |router, RouteRegistrar(register)| {
-            register(router)
-        })
-}
-
-pub fn register_route<H, T>(
-    router: axum::Router,
-    path: &str,
-    method: Method,
-    route: H,
-) -> axum::Router
-where
-    H: axum::handler::Handler<T, axum::body::Body>,
-    T: 'static,
-{
-    router.route(
-        path,
-        match method {
-            axum::http::Method::GET => axum::routing::get(route),
-            axum::http::Method::POST => axum::routing::post(route),
-            axum::http::Method::PUT => axum::routing::put(route),
-            axum::http::Method::DELETE => axum::routing::delete(route),
-            axum::http::Method::HEAD => axum::routing::head(route),
-            axum::http::Method::OPTIONS => axum::routing::options(route),
-            axum::http::Method::PATCH => axum::routing::patch(route),
-            axum::http::Method::TRACE => axum::routing::trace(route),
-            method => panic!("Unsupported method: {}", method),
-        },
-    )
 }
