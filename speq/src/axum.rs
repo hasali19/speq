@@ -2,7 +2,11 @@ use axum::body::Body;
 use axum::handler::Handler;
 use axum::{routing, Router};
 pub use http::Method;
-pub use speq_macros::*;
+pub use speq_macros::{
+    axum_connect as connect, axum_delete as delete, axum_get as get, axum_head as head,
+    axum_options as options, axum_patch as patch, axum_post as post, axum_put as put,
+    axum_trace as trace,
+};
 
 #[derive(Clone, Copy)]
 pub struct RouteRegistrar(pub fn(Router) -> Router);

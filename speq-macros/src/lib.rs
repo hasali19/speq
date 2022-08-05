@@ -19,12 +19,12 @@ macro_rules! axum_route_macro {
     };
 }
 
-axum_route_macro!(get, Get);
-axum_route_macro!(post, Post);
-axum_route_macro!(put, Put);
-axum_route_macro!(delete, Delete);
-axum_route_macro!(head, Head);
-axum_route_macro!(options, Options);
-axum_route_macro!(connect, Connect);
-axum_route_macro!(patch, Patch);
-axum_route_macro!(trace, Trace);
+axum_route_macro!(axum_get, Get);
+axum_route_macro!(axum_post, Post);
+axum_route_macro!(axum_put, Put);
+axum_route_macro!(axum_delete, Delete);
+axum_route_macro!(axum_head, Head);
+axum_route_macro!(axum_options, Options);
+axum_route_macro!(axum_connect, Connect);
+axum_route_macro!(axum_patch, Patch);
+axum_route_macro!(axum_trace, Trace);

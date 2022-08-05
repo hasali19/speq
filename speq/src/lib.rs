@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 pub use http::{Method, StatusCode};
 pub use inventory;
-pub use speq_macros::*;
+pub use speq_macros::Reflect;
 
 use reflection::{Type, TypeContext, TypeDecl};
 
