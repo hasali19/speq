@@ -191,67 +191,40 @@ fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenStrea
         }
     }
 
+    let doc = if doc.is_empty() {
+        quote! { None }
+    } else {
+        quote! { Some(#doc.into()) }
+    };
+
     TokenStream::from(quote! {
         #input
 
         const _: () = {
-            struct Route;
-
-            impl speq::Route for Route {
-                fn name(&self) -> &'static str {
-                    stringify!(#name)
-                }
-
-                fn path(&self) -> &'static str {
-                    #path
-                }
-
-                fn method(&self) -> axum::http::Method {
-                    #method
-                }
-
-                fn src_file(&self) -> &'static str {
-                    file!()
-                }
-
-                fn doc(&self) -> Option<&'static str> {
-                    Some(#doc)
-                }
-
-                fn params(&self, cx: &mut speq::reflection::TypeContext) -> Vec<speq::ParamSpec> {
-                    let mut params = vec![];
-                    #(#params)*
-                    params
-                }
-
-                fn query(&self, cx: &mut speq::reflection::TypeContext) -> Option<speq::QuerySpec> {
-                    #query
-                }
-
-                fn request(&self, cx: &mut speq::reflection::TypeContext) -> Option<speq::RequestSpec> {
-                    #request
-                }
-
-                fn responses(&self, cx: &mut speq::reflection::TypeContext) -> Vec<speq::ResponseSpec> {
-                    vec![#(#responses),*]
-                }
-
-                fn register(&self, router: axum::Router) -> axum::Router {
-                    router.route(self.path(), match self.method() {
-                        axum::http::Method::GET => axum::routing::get(#name),
-                        axum::http::Method::POST => axum::routing::post(#name),
-                        axum::http::Method::PUT => axum::routing::put(#name),
-                        axum::http::Method::DELETE => axum::routing::delete(#name),
-                        axum::http::Method::HEAD => axum::routing::head(#name),
-                        axum::http::Method::OPTIONS => axum::routing::options(#name),
-                        axum::http::Method::PATCH => axum::routing::patch(#name),
-                        axum::http::Method::TRACE => axum::routing::trace(#name),
-                        method => panic!("Unsupported method: {}", method),
-                    })
+            fn spec(cx: &mut speq::reflection::TypeContext) -> speq::RouteSpec {
+                speq::RouteSpec {
+                    name: stringify!(#name).into(),
+                    path: #path.into(),
+                    method: #method,
+                    src_file: file!().into(),
+                    doc: #doc,
+                    params: {
+                        let mut params = vec![];
+                        #(#params)*
+                        params
+                    },
+                    query: #query,
+                    request: #request,
+                    responses: vec![#(#responses),*],
                 }
             }
 
-            speq::submit!(&Route);
+            fn register(router: axum::Router) -> axum::Router {
+                speq::register_route(router, #path, #method, #name)
+            }
+
+            speq::inventory::submit!(speq::RouteSpecFn(spec));
+            speq::inventory::submit!(speq::RouteRegistrar(register));
         };
     })
 }
