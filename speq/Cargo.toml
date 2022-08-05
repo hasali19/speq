@@ -1,0 +1,19 @@
+[package]
+name = "speq"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+inventory = "0.3"
+speq-macros = { path = "../speq-macros" }
+
+[dependencies.axum]
+version = "0.5"
+default-features = false
+
+[dependencies.serde_qs]
+version = "0.10"
+optional = true
+features = ["axum"]

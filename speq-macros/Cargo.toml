@@ -1,0 +1,20 @@
+[package]
+name = "speq-macros"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1"
+quote = "1"
+structmeta = "0.1"
+serde_derive_internals = "0.26"
+syn-mid = "0.5"
+
+[dependencies.syn]
+version = "1"
+default-features = false
