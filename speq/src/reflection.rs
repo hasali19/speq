@@ -127,7 +127,9 @@ pub struct StructType {
 
 #[derive(Clone, Debug)]
 pub enum EnumTag {
+    External,
     Internal(SpeqStr),
+    Adjacent { tag: SpeqStr, content: SpeqStr },
 }
 
 #[derive(Clone, Debug)]

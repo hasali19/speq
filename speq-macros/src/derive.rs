@@ -13,10 +13,14 @@ pub fn derive_reflect(input: TokenStream) -> TokenStream {
     let expr = match container.data {
         serde_ast::Data::Enum(variants) => {
             let tag = match container.attrs.tag() {
-                serde_attr::TagType::External => todo!("external tag"),
-                serde_attr::TagType::Internal { tag } => tag,
-                serde_attr::TagType::Adjacent { .. } => todo!("adjacent tag"),
-                serde_attr::TagType::None => todo!("untagged"),
+                serde_attr::TagType::External => quote! { Some(EnumTag::External) },
+                serde_attr::TagType::Internal { tag } => {
+                    quote! { Some(EnumTag::Internal(#tag.into())) }
+                }
+                serde_attr::TagType::Adjacent { tag, content } => {
+                    quote! { Some(EnumTag::Adjacent { tag: #tag.into(), content: #content.into() }) }
+                }
+                serde_attr::TagType::None => quote! { None },
             };
 
             let variants = variants.into_iter().map(|variant| {
@@ -52,7 +56,7 @@ pub fn derive_reflect(input: TokenStream) -> TokenStream {
             quote! {
                 TypeDecl::Enum(EnumType {
                     name: stringify!(#ident).into(),
-                    tag: Some(EnumTag::Internal(#tag.into())),
+                    tag: #tag,
                     variants: vec![#(#variants),*],
                 })
             }
