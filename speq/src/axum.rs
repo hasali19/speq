@@ -1,4 +1,4 @@
-use axum::body::Body;
+use axum::body::HttpBody;
 use axum::handler::Handler;
 use axum::{routing, Router};
 pub use http::Method;
@@ -8,24 +8,50 @@ pub use speq_macros::{
     axum_trace as trace,
 };
 
-#[derive(Clone, Copy)]
-pub struct RouteRegistrar(pub fn(Router) -> Router);
+#[macro_export]
+macro_rules! axum_config {
+    ($state:ty) => {
+        #[doc(hidden)]
+        pub(crate) mod __speq_config {
+            pub type RouterState = $state;
 
-inventory::collect!(RouteRegistrar);
+            #[derive(Clone, Copy)]
+            pub struct RouteRegistrar(
+                pub fn(axum::Router<RouterState>) -> axum::Router<RouterState>,
+            );
 
-pub fn router() -> Router {
-    inventory::iter::<RouteRegistrar>
-        .into_iter()
-        .fold(Router::new(), |router, RouteRegistrar(register)| {
-            register(router)
-        })
+            speq::inventory::collect!(RouteRegistrar);
+        }
+    };
+}
+
+#[macro_export]
+#[allow(clippy::crate_in_macro_def)]
+macro_rules! axum_router {
+    () => {{
+        let router: axum::Router<crate::__speq_config::RouterState> =
+            $crate::inventory::iter::<crate::__speq_config::RouteRegistrar>
+                .into_iter()
+                .fold(
+                    axum::Router::new(),
+                    |router, crate::__speq_config::RouteRegistrar(register)| register(router),
+                );
+        router
+    }};
 }
 
 #[doc(hidden)]
-pub fn register_route<H, T>(router: Router, path: &str, method: Method, route: H) -> Router
+pub fn register_route<H, T, S, B>(
+    router: Router<S, B>,
+    path: &str,
+    method: Method,
+    route: H,
+) -> Router<S, B>
 where
-    H: Handler<T, Body>,
+    H: Handler<T, S, B>,
     T: 'static,
+    S: Clone + Send + Sync + 'static,
+    B: HttpBody + Send + 'static,
 {
     router.route(
         path,

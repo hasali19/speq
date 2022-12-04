@@ -219,12 +219,12 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
                 }
             }
 
-            fn register(router: axum::Router) -> axum::Router {
+            fn register(router: axum::Router<crate::__speq_config::RouterState>) -> axum::Router<crate::__speq_config::RouterState> {
                 speq::axum::register_route(router, #path, #method, #name)
             }
 
             speq::inventory::submit!(speq::RouteSpecFn(spec));
-            speq::inventory::submit!(speq::axum::RouteRegistrar(register));
+            speq::inventory::submit!(crate::__speq_config::RouteRegistrar(register));
         };
     })
 }
