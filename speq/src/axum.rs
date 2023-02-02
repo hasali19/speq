@@ -64,7 +64,7 @@ where
             Method::OPTIONS => routing::options(route),
             Method::PATCH => routing::patch(route),
             Method::TRACE => routing::trace(route),
-            method => panic!("Unsupported method: {}", method),
+            method => panic!("Unsupported method: {method}"),
         },
     )
 }

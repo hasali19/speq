@@ -92,7 +92,7 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
                 _ => unreachable!(),
             };
 
-            writeln!(doc, "{}", val).unwrap();
+            writeln!(doc, "{val}").unwrap();
         } else if attr.path.is_ident("path") {
             let args = attr.parse_args::<PathArgs>().unwrap();
             let model = args.model;
