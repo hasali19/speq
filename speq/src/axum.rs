@@ -13,6 +13,8 @@ macro_rules! axum_config {
     ($state:ty) => {
         #[doc(hidden)]
         pub(crate) mod __speq_config {
+            use super::*;
+
             pub type RouterState = $state;
 
             #[derive(Clone, Copy)]
