@@ -19,6 +19,10 @@ version = "0.6"
 default-features = false
 optional = true
 
+[dependencies.camino]
+version = "1"
+optional = true
+
 [dependencies.serde_qs]
 version = "0.11"
 optional = true
@@ -26,6 +30,7 @@ optional = true
 [features]
 axum = ["dep:axum", "speq-macros/axum"]
 axum_query = ["axum/query"]
+camino = ["dep:camino"]
 serde_qs_axum = ["serde_qs/axum"]
 
 [dev-dependencies.axum]

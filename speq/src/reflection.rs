@@ -228,4 +228,26 @@ mod impls {
 
     #[cfg(feature = "serde_qs_axum")]
     forward_impl!(serde_qs::axum::QsQuery<T>);
+
+    #[cfg(feature = "camino")]
+    impl Reflect for camino::Utf8Path {
+        fn type_id() -> Option<SpeqStr> {
+            Some(SpeqStr::Borrowed("camino::Utf8Path"))
+        }
+
+        fn reflect(cx: &mut TypeContext) -> Type {
+            String::reflect(cx)
+        }
+    }
+
+    #[cfg(feature = "camino")]
+    impl Reflect for camino::Utf8PathBuf {
+        fn type_id() -> Option<SpeqStr> {
+            Some(SpeqStr::Borrowed("camino::Utf8PathBuf"))
+        }
+
+        fn reflect(cx: &mut TypeContext) -> Type {
+            String::reflect(cx)
+        }
+    }
 }
