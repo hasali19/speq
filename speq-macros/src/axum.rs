@@ -3,8 +3,7 @@ use std::fmt::Write;
 use proc_macro::TokenStream;
 use quote::quote;
 use structmeta::StructMeta;
-use syn::{AttributeArgs, Lit, LitInt, LitStr, Meta};
-use syn_mid::FnArg;
+use syn::{Expr, ExprLit, FnArg, ItemFn, Lit, LitInt, LitStr};
 
 pub enum Method {
     Get,
@@ -37,7 +36,7 @@ struct ResponseArgs {
 }
 
 pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenStream {
-    let mut input: syn_mid::ItemFn = match syn::parse(item.clone()) {
+    let mut input: ItemFn = match syn::parse(item.clone()) {
         Ok(input) => input,
         Err(e) => {
             item.extend(TokenStream::from(e.into_compile_error()));
@@ -45,18 +44,14 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
         }
     };
 
-    let args = syn::parse_macro_input!(args as AttributeArgs);
-    let path = match args.first().unwrap() {
-        syn::NestedMeta::Meta(_) => panic!(),
-        syn::NestedMeta::Lit(lit) => match lit {
-            syn::Lit::Str(path) => path.value(),
-            _ => {
-                item.extend(TokenStream::from(
-                    quote! {compile_error("Invalid path in macro arguments")},
-                ));
-                return item;
-            }
-        },
+    let path = match syn::parse_macro_input!(args as syn::Lit) {
+        syn::Lit::Str(path) => path.value(),
+        _ => {
+            item.extend(TokenStream::from(
+                quote! {compile_error("Invalid path in macro arguments")},
+            ));
+            return item;
+        }
     };
 
     let name = input.sig.ident.clone();
@@ -80,20 +75,17 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
     let mut responses = vec![];
 
     for attr in &input.attrs {
-        if attr.path.is_ident("doc") {
-            let meta = attr.parse_meta().unwrap();
-            let meta = match meta {
-                Meta::NameValue(val) => val,
-                _ => unreachable!(),
+        if attr.path().is_ident("doc") {
+            let meta = attr.meta.require_name_value().unwrap();
+
+            let Expr::Lit(ExprLit { lit: Lit::Str(str), .. }) = &meta.value else {
+                panic!("invalid path");
             };
 
-            let val = match meta.lit {
-                Lit::Str(str) => str.value(),
-                _ => unreachable!(),
-            };
+            let val = str.value();
 
             writeln!(doc, "{val}").unwrap();
-        } else if attr.path.is_ident("path") {
+        } else if attr.path().is_ident("path") {
             let args = attr.parse_args::<PathArgs>().unwrap();
             let model = args.model;
 
@@ -115,7 +107,7 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
                 });
 
             params.extend(param_specs);
-        } else if attr.path.is_ident("request") {
+        } else if attr.path().is_ident("request") {
             let args = attr.parse_args::<RequestArgs>().unwrap();
             let model = args.model;
 
@@ -126,7 +118,7 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
                     }
                 )
             };
-        } else if attr.path.is_ident("response") {
+        } else if attr.path().is_ident("response") {
             let args = attr.parse_args::<ResponseArgs>().unwrap();
             let status = args
                 .status
@@ -164,7 +156,7 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
     input.attrs.retain(|attr| {
         ["path", "request", "response"]
             .iter()
-            .all(|ident| !attr.path.is_ident(ident))
+            .all(|ident| !attr.path().is_ident(ident))
     });
 
     let query_param = input.sig.inputs.iter().find_map(|input| match input {
@@ -172,7 +164,7 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
         FnArg::Typed(param) => param
             .attrs
             .iter()
-            .find(|it| it.path.is_ident("query"))
+            .find(|it| it.path().is_ident("query"))
             .map(|attr| (param, attr)),
     });
 
@@ -187,7 +179,7 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
 
     for input in input.sig.inputs.iter_mut() {
         if let FnArg::Typed(param) = input {
-            param.attrs.retain(|attr| !attr.path.is_ident("query"));
+            param.attrs.retain(|attr| !attr.path().is_ident("query"));
         }
     }
 
