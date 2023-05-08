@@ -44,6 +44,7 @@ pub enum Type {
     Primitive(PrimitiveType),
     Option(Box<Type>),
     Array(Box<Type>),
+    Tuple(Vec<Type>),
     Map(Box<Type>),
     Id(SpeqStr),
 }
@@ -187,6 +188,34 @@ mod impls {
 
     impl_for_primitive!(bool, PrimitiveType::Bool);
     impl_for_primitive!(String, PrimitiveType::String);
+
+    macro_rules! impl_for_tuple {
+        ($($t:ident)*) => {
+            #[allow(unused)]
+            impl<$($t: Reflect,)*> Reflect for ($($t,)*) {
+                fn type_id() -> Option<SpeqStr> {
+                    None
+                }
+
+                fn reflect(cx: &mut TypeContext) -> Type {
+                    Type::Tuple(vec![$($t::reflect(cx),)*])
+                }
+            }
+        };
+    }
+
+    impl_for_tuple!();
+    impl_for_tuple!(A);
+    impl_for_tuple!(A B);
+    impl_for_tuple!(A B C D);
+    impl_for_tuple!(A B C D E);
+    impl_for_tuple!(A B C D E F);
+    impl_for_tuple!(A B C D E F G);
+    impl_for_tuple!(A B C D E F G H);
+    impl_for_tuple!(A B C D E F G H I);
+    impl_for_tuple!(A B C D E F G H I J);
+    impl_for_tuple!(A B C D E F G H I J K);
+    impl_for_tuple!(A B C D E F G H I J K L);
 
     impl<T: Reflect> Reflect for Option<T> {
         fn type_id() -> Option<SpeqStr> {
