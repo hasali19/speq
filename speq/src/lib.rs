@@ -17,9 +17,9 @@ pub type SpeqStr = Cow<'static, str>;
 compile_error!("feature 'axum_query' requires also enabling 'axum'");
 
 #[derive(Clone, Debug)]
-pub struct ParamSpec {
-    pub name: SpeqStr,
-    pub type_desc: Type,
+pub struct PathSpec {
+    pub value: SpeqStr,
+    pub params: Option<Type>,
 }
 
 #[derive(Clone, Debug)]
@@ -42,11 +42,10 @@ pub struct ResponseSpec {
 #[derive(Clone, Debug)]
 pub struct RouteSpec {
     pub name: SpeqStr,
-    pub path: SpeqStr,
+    pub path: PathSpec,
     pub method: Method,
     pub src_file: SpeqStr,
     pub doc: Option<SpeqStr>,
-    pub params: Vec<ParamSpec>,
     pub query: Option<QuerySpec>,
     pub request: Option<RequestSpec>,
     pub responses: Vec<ResponseSpec>,
