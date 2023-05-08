@@ -29,6 +29,7 @@ optional = true
 
 [features]
 axum = ["dep:axum", "speq-macros/axum"]
+axum_json = ["axum/json"]
 axum_query = ["axum/query"]
 camino = ["dep:camino"]
 serde_qs_axum = ["serde_qs/axum"]

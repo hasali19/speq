@@ -255,6 +255,9 @@ mod impls {
     #[cfg(feature = "axum")]
     forward_impl!(axum::extract::Path<T>);
 
+    #[cfg(feature = "axum_json")]
+    forward_impl!(axum::extract::Json<T>);
+
     #[cfg(feature = "axum_query")]
     forward_impl!(axum::extract::Query<T>);
 
