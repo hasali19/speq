@@ -223,6 +223,9 @@ mod impls {
         };
     }
 
+    #[cfg(feature = "axum")]
+    forward_impl!(axum::extract::Path<T>);
+
     #[cfg(feature = "axum_query")]
     forward_impl!(axum::extract::Query<T>);
 
