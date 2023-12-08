@@ -1,4 +1,3 @@
-use axum::body::HttpBody;
 use axum::handler::Handler;
 use axum::{routing, Router};
 pub use http::Method;
@@ -43,17 +42,11 @@ macro_rules! axum_router {
 }
 
 #[doc(hidden)]
-pub fn register_route<H, T, S, B>(
-    router: Router<S, B>,
-    path: &str,
-    method: Method,
-    route: H,
-) -> Router<S, B>
+pub fn register_route<H, T, S>(router: Router<S>, path: &str, method: Method, route: H) -> Router<S>
 where
-    H: Handler<T, S, B>,
+    H: Handler<T, S>,
     T: 'static,
     S: Clone + Send + Sync + 'static,
-    B: HttpBody + Send + 'static,
 {
     router.route(
         path,
