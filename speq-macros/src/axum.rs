@@ -78,7 +78,10 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
         if attr.path().is_ident("doc") {
             let meta = attr.meta.require_name_value().unwrap();
 
-            let Expr::Lit(ExprLit { lit: Lit::Str(str), .. }) = &meta.value else {
+            let Expr::Lit(ExprLit {
+                lit: Lit::Str(str), ..
+            }) = &meta.value
+            else {
                 panic!("invalid path");
             };
 
@@ -87,26 +90,12 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
             writeln!(doc, "{val}").unwrap();
         } else if attr.path().is_ident("path") {
             let args = attr.parse_args::<PathArgs>().unwrap();
-            let model = args.model;
 
-            let param_specs = path
-                .split('/')
-                .filter(|it| it.starts_with(':'))
-                .enumerate()
-                .map(|(i, name)| {
-                    let name = name.trim_start_matches(':');
-                    let model = model
-                        .get(i)
-                        .expect("number of path parameters must match path string");
-                    quote! {
-                        params.push(speq::ParamSpec {
-                            name: #name.into(),
-                            type_desc: <#model as speq::reflection::Reflect>::reflect(cx),
-                        });
-                    }
-                });
-
-            params.extend(param_specs);
+            params.extend(args.model.iter().map(|model| {
+                quote! {
+                    <#model as speq::reflection::Reflect>::reflect(cx)
+                }
+            }));
         } else if attr.path().is_ident("request") {
             let args = attr.parse_args::<RequestArgs>().unwrap();
             let model = args.model;
@@ -196,15 +185,13 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
             fn spec(cx: &mut speq::reflection::TypeContext) -> speq::RouteSpec {
                 speq::RouteSpec {
                     name: stringify!(#name).into(),
-                    path: #path.into(),
+                    path: speq::PathSpec {
+                        value: #path.into(),
+                        params: vec![#(#params,)*],
+                    },
                     method: #method,
                     src_file: file!().into(),
                     doc: #doc,
-                    params: {
-                        let mut params = vec![];
-                        #(#params)*
-                        params
-                    },
                     query: #query,
                     request: #request,
                     responses: vec![#(#responses),*],
