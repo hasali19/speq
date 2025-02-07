@@ -27,9 +27,6 @@ struct HelloWorldQuery {
 }
 
 #[get("/hello_world")]
-async fn hello_world(
-    #[query] query: Query<HelloWorldQuery>,
-    State(state): State<i32>,
-) -> impl IntoResponse {
+async fn hello_world(query: Query<HelloWorldQuery>, State(state): State<i32>) -> impl IntoResponse {
     format!("hello, {}! state={state}", query.name)
 }

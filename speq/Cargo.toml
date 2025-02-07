@@ -19,6 +19,11 @@ version = "0.8"
 default-features = false
 optional = true
 
+[dependencies.axum-extra]
+version = "0.10"
+default-features = false
+optional = true
+
 [dependencies.camino]
 version = "1"
 optional = true
@@ -29,10 +34,13 @@ optional = true
 
 [features]
 axum = ["dep:axum", "speq-macros/axum"]
-axum_json = ["axum/json"]
-axum_query = ["axum/query"]
+axum-json = ["axum", "axum/json"]
 camino = ["dep:camino"]
-serde_qs_axum = ["serde_qs/axum"]
+serde_qs-axum = ["axum", "serde_qs/axum"]
+
+axum-extra = ["axum", "dep:axum-extra"]
+axum-extra-cookie = ["axum-extra", "axum-extra/cookie"]
+axum-extra-cookie-private = ["axum-extra", "axum-extra/cookie-private"]
 
 [dev-dependencies.axum]
 version = "0.8"

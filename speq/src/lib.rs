@@ -9,12 +9,9 @@ pub use http::{Method, StatusCode};
 pub use inventory;
 pub use speq_macros::Reflect;
 
-use reflection::{Type, TypeContext, TypeDecl};
+pub use reflection::{Type, TypeContext, TypeDecl};
 
 pub type SpeqStr = Cow<'static, str>;
-
-#[cfg(all(feature = "axum_query", not(feature = "axum")))]
-compile_error!("feature 'axum_query' requires also enabling 'axum'");
 
 #[derive(Clone, Debug)]
 pub struct PathSpec {
@@ -25,11 +22,13 @@ pub struct PathSpec {
 #[derive(Clone, Debug)]
 pub struct QuerySpec {
     pub type_desc: Type,
+    pub is_optional: bool,
 }
 
 #[derive(Clone, Debug)]
 pub struct RequestSpec {
     pub type_desc: Type,
+    pub is_optional: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -67,6 +66,41 @@ impl RouteSpecFn {
 }
 
 inventory::collect!(RouteSpecFn);
+
+pub struct RouteHandlerInputContext<'a> {
+    pub type_cx: &'a mut TypeContext,
+    pub is_optional: bool,
+}
+
+impl RouteHandlerInputContext<'_> {
+    pub fn new(type_cx: &mut TypeContext) -> RouteHandlerInputContext {
+        RouteHandlerInputContext {
+            type_cx,
+            is_optional: false,
+        }
+    }
+}
+
+pub trait RouteHandlerInput {
+    fn describe(cx: &mut RouteHandlerInputContext, route: &mut RouteSpec) {
+        let _ = cx;
+        let _ = route;
+    }
+}
+
+impl<T: RouteHandlerInput> RouteHandlerInput for Option<T> {
+    fn describe(cx: &mut RouteHandlerInputContext, route: &mut RouteSpec) {
+        cx.is_optional = true;
+        T::describe(cx, route);
+    }
+}
+
+impl<T: RouteHandlerInput, E> RouteHandlerInput for Result<T, E> {
+    fn describe(cx: &mut RouteHandlerInputContext, route: &mut RouteSpec) {
+        cx.is_optional = true;
+        T::describe(cx, route);
+    }
+}
 
 pub fn spec() -> ApiSpec {
     let mut tcx = TypeContext::new();

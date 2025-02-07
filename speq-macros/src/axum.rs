@@ -18,14 +18,8 @@ pub enum Method {
 }
 
 #[derive(StructMeta)]
-struct PathArgs {
-    #[struct_meta(unnamed)]
-    model: Vec<syn::Path>,
-}
-
-#[derive(StructMeta)]
-struct RequestArgs {
-    model: Option<syn::Path>,
+struct ParamArgs {
+    skip: bool,
 }
 
 #[derive(StructMeta)]
@@ -69,9 +63,6 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
     };
 
     let mut doc = String::new();
-    let mut params = quote! { None };
-    let mut query = quote! { None };
-    let mut request = quote! { None };
     let mut responses = vec![];
 
     for attr in &input.attrs {
@@ -88,25 +79,6 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
             let val = str.value();
 
             writeln!(doc, "{val}").unwrap();
-        } else if attr.path().is_ident("path") {
-            let args = attr.parse_args::<PathArgs>().unwrap();
-
-            params.extend(args.model.iter().map(|model| {
-                quote! {
-                    <#model as speq::reflection::Reflect>::reflect(cx)
-                }
-            }));
-        } else if attr.path().is_ident("request") {
-            let args = attr.parse_args::<RequestArgs>().unwrap();
-            let model = args.model;
-
-            request = quote! {
-                Some(
-                    speq::RequestSpec {
-                        type_desc: <#model as speq::reflection::Reflect>::reflect(cx),
-                    }
-                )
-            };
         } else if attr.path().is_ident("response") {
             let args = attr.parse_args::<ResponseArgs>().unwrap();
             let status = args
@@ -142,51 +114,46 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
         }
     }
 
+    let inputs = input
+        .sig
+        .inputs
+        .iter()
+        .filter_map(|param| match param {
+            FnArg::Receiver(_) => None,
+            FnArg::Typed(param) => Some(param),
+        })
+        .filter(|param| {
+            let speq_attr = param
+                .attrs
+                .iter()
+                .find(|attr| attr.meta.path().is_ident("speq"));
+            let Some(speq_attr) = speq_attr else {
+                return true;
+            };
+
+            let args: ParamArgs = speq_attr.parse_args().unwrap();
+
+            !args.skip
+        })
+        .map(|param| {
+            let ty = &param.ty;
+            quote! {
+                <#ty as speq::RouteHandlerInput>::describe(&mut input_cx, &mut spec);
+            }
+        })
+        .collect::<Vec<_>>();
+
     input.attrs.retain(|attr| {
-        ["path", "request", "response"]
+        ["response"]
             .iter()
             .all(|ident| !attr.path().is_ident(ident))
     });
 
-    let mut path_param = None;
-    let mut query_param = None;
-
-    for arg in &input.sig.inputs {
-        let FnArg::Typed(param) = arg else { continue };
-
-        for attr in &param.attrs {
-            let attr_path = attr.path();
-            if attr_path.is_ident("path") {
-                path_param = Some(param);
-            } else if attr_path.is_ident("query") {
-                query_param = Some(param);
-            }
-        }
-    }
-
-    if let Some(param) = path_param {
-        let model = &param.ty;
-        params = quote! {
-            Some(<#model as speq::reflection::Reflect>::reflect(cx))
-        };
-    }
-
-    if let Some(param) = query_param {
-        let model = &param.ty;
-        query = quote! {
-            Some(speq::QuerySpec {
-                type_desc: <#model as speq::reflection::Reflect>::reflect(cx)
-            })
-        };
-    }
-
     for input in input.sig.inputs.iter_mut() {
         if let FnArg::Typed(param) = input {
-            param.attrs.retain(|attr| {
-                ["path", "query"]
-                    .iter()
-                    .all(|ident| !attr.path().is_ident(ident))
-            });
+            param
+                .attrs
+                .retain(|attr| ["speq"].iter().all(|ident| !attr.path().is_ident(ident)));
         }
     }
 
@@ -201,19 +168,25 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
 
         const _: () = {
             fn spec(cx: &mut speq::reflection::TypeContext) -> speq::RouteSpec {
-                speq::RouteSpec {
+                let mut spec = speq::RouteSpec {
                     name: stringify!(#name).into(),
                     path: speq::PathSpec {
                         value: #path.into(),
-                        params: #params,
+                        params: None,
                     },
                     method: #method,
                     src_file: file!().into(),
                     doc: #doc,
-                    query: #query,
-                    request: #request,
+                    query: None,
+                    request: None,
                     responses: vec![#(#responses),*],
-                }
+                };
+
+                let mut input_cx = speq::RouteHandlerInputContext::new(cx);
+
+                #(#inputs)*
+
+                spec
             }
 
             fn register(router: axum::Router<crate::__speq_config::RouterState>) -> axum::Router<crate::__speq_config::RouterState> {

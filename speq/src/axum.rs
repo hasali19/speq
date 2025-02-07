@@ -7,6 +7,9 @@ pub use speq_macros::{
     axum_trace as trace,
 };
 
+use crate::reflection::Reflect;
+use crate::{QuerySpec, RequestSpec, RouteHandlerInput, RouteHandlerInputContext};
+
 #[macro_export]
 macro_rules! axum_config {
     ($state:ty) => {
@@ -63,3 +66,39 @@ where
         },
     )
 }
+
+impl<T: Reflect> RouteHandlerInput for axum::extract::Path<T> {
+    fn describe(cx: &mut RouteHandlerInputContext, route: &mut crate::RouteSpec) {
+        route.path.params = Some(T::reflect(cx.type_cx));
+    }
+}
+
+impl<T: Reflect> RouteHandlerInput for serde_qs::axum::QsQuery<T> {
+    fn describe(cx: &mut RouteHandlerInputContext, route: &mut crate::RouteSpec) {
+        route.query = Some(QuerySpec {
+            type_desc: T::reflect(cx.type_cx),
+            is_optional: cx.is_optional,
+        });
+    }
+}
+
+impl<T: Reflect> RouteHandlerInput for axum::extract::Json<T> {
+    fn describe(cx: &mut RouteHandlerInputContext, route: &mut crate::RouteSpec) {
+        route.request = Some(RequestSpec {
+            type_desc: T::reflect(cx.type_cx),
+            is_optional: cx.is_optional,
+        });
+    }
+}
+
+impl RouteHandlerInput for axum::extract::Multipart {
+    // TODO: Describe multipart request
+}
+
+impl<T> RouteHandlerInput for axum::extract::Extension<T> {}
+
+#[cfg(feature = "axum-extra-cookie")]
+impl RouteHandlerInput for axum_extra::extract::cookie::CookieJar {}
+
+#[cfg(feature = "axum-extra-cookie-private")]
+impl RouteHandlerInput for axum_extra::extract::cookie::PrivateCookieJar {}

@@ -252,18 +252,6 @@ mod impls {
         };
     }
 
-    #[cfg(feature = "axum")]
-    forward_impl!(axum::extract::Path<T>);
-
-    #[cfg(feature = "axum_json")]
-    forward_impl!(axum::extract::Json<T>);
-
-    #[cfg(feature = "axum_query")]
-    forward_impl!(axum::extract::Query<T>);
-
-    #[cfg(feature = "serde_qs_axum")]
-    forward_impl!(serde_qs::axum::QsQuery<T>);
-
     #[cfg(feature = "camino")]
     impl Reflect for camino::Utf8Path {
         fn type_id() -> Option<SpeqStr> {
