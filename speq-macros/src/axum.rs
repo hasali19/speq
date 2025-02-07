@@ -69,7 +69,7 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
     };
 
     let mut doc = String::new();
-    let mut params = vec![];
+    let mut params = quote! { None };
     let mut query = quote! { None };
     let mut request = quote! { None };
     let mut responses = vec![];
@@ -148,16 +148,30 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
             .all(|ident| !attr.path().is_ident(ident))
     });
 
-    let query_param = input.sig.inputs.iter().find_map(|input| match input {
-        FnArg::Receiver(_) => None,
-        FnArg::Typed(param) => param
-            .attrs
-            .iter()
-            .find(|it| it.path().is_ident("query"))
-            .map(|attr| (param, attr)),
-    });
+    let mut path_param = None;
+    let mut query_param = None;
 
-    if let Some((param, _)) = query_param {
+    for arg in &input.sig.inputs {
+        let FnArg::Typed(param) = arg else { continue };
+
+        for attr in &param.attrs {
+            let attr_path = attr.path();
+            if attr_path.is_ident("path") {
+                path_param = Some(param);
+            } else if attr_path.is_ident("query") {
+                query_param = Some(param);
+            }
+        }
+    }
+
+    if let Some(param) = path_param {
+        let model = &param.ty;
+        params = quote! {
+            Some(<#model as speq::reflection::Reflect>::reflect(cx))
+        };
+    }
+
+    if let Some(param) = query_param {
         let model = &param.ty;
         query = quote! {
             Some(speq::QuerySpec {
@@ -168,7 +182,11 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
 
     for input in input.sig.inputs.iter_mut() {
         if let FnArg::Typed(param) = input {
-            param.attrs.retain(|attr| !attr.path().is_ident("query"));
+            param.attrs.retain(|attr| {
+                ["path", "query"]
+                    .iter()
+                    .all(|ident| !attr.path().is_ident(ident))
+            });
         }
     }
 
@@ -187,7 +205,7 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
                     name: stringify!(#name).into(),
                     path: speq::PathSpec {
                         value: #path.into(),
-                        params: vec![#(#params,)*],
+                        params: #params,
                     },
                     method: #method,
                     src_file: file!().into(),

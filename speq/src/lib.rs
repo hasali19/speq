@@ -19,7 +19,7 @@ compile_error!("feature 'axum_query' requires also enabling 'axum'");
 #[derive(Clone, Debug)]
 pub struct PathSpec {
     pub value: SpeqStr,
-    pub params: Vec<Type>,
+    pub params: Option<Type>,
 }
 
 #[derive(Clone, Debug)]
