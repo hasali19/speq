@@ -177,6 +177,7 @@ pub fn route(method: Method, args: TokenStream, mut item: TokenStream) -> TokenS
                     method: #method,
                     src_file: file!().into(),
                     doc: #doc,
+                    headers: vec![],
                     query: None,
                     request: None,
                     responses: vec![#(#responses),*],

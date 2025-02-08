@@ -20,6 +20,13 @@ pub struct PathSpec {
 }
 
 #[derive(Clone, Debug)]
+pub struct HeaderSpec {
+    pub name: SpeqStr,
+    pub type_desc: Option<Type>,
+    pub is_optional: bool,
+}
+
+#[derive(Clone, Debug)]
 pub struct QuerySpec {
     pub type_desc: Type,
     pub is_optional: bool,
@@ -45,6 +52,7 @@ pub struct RouteSpec {
     pub method: Method,
     pub src_file: SpeqStr,
     pub doc: Option<SpeqStr>,
+    pub headers: Vec<HeaderSpec>,
     pub query: Option<QuerySpec>,
     pub request: Option<RequestSpec>,
     pub responses: Vec<ResponseSpec>,
